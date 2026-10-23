@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pair Up – Pengingat Tugas &amp; Ujian Mahasiswa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
+      colors: { brand: { 50:'#EEF2FF', 100:'#E0E7FF', 500:'#5B5BD6', 600:'#4A4AC4', 700:'#3B3BA8' } }
+    } }
+  }
+</script>
+<style>
+  body { background:#F4F6FB; }
+  .modal-enter { animation: pop .18s ease-out; }
+  @keyframes pop { from { opacity:0; transform:translateY(8px) scale(.98);} to { opacity:1; transform:none; } }
+  :focus-visible { outline:2px solid #5B5BD6; outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce) { .modal-enter { animation:none; } }
+</style>
+</head>
+<body class="font-sans text-slate-800 antialiased">
+
+<!-- Sidebar (laptop) -->
+<aside class="hidden md:flex fixed inset-y-0 left-0 w-64 flex-col bg-white border-r border-slate-200 p-5">
+  <div class="flex items-center gap-3 mb-8">
+    <div class="w-10 h-10 rounded-xl bg-brand-500 text-white grid place-items-center"><i class="fa-solid fa-bell"></i></div>
+    <span class="text-xl font-extrabold tracking-tight">Pair Up</span>
+  </div>
+  <nav class="space-y-1" id="sideNav">
+    <button data-view="dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left font-semibold"><i class="fa-solid fa-house w-5"></i>Dashboard</button>
+    <button data-view="tugas" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left font-semibold"><i class="fa-solid fa-list-check w-5"></i>Tugas &amp; Ujian</button>
+  </nav>
+  <button onclick="openModal()" class="mt-auto bg-brand-500 hover:bg-brand-600 text-white rounded-xl py-3 font-semibold"><i class="fa-solid fa-plus mr-2"></i>Tambah tugas</button>
+</aside>
+
+<!-- Konten -->
+<main class="md:ml-64 px-4 sm:px-8 pt-6 pb-28 md:pb-10 max-w-5xl">
+  <header class="flex items-center justify-between mb-6">
+    <div>
+      <h1 id="greeting" class="text-2xl sm:text-3xl font-extrabold tracking-tight"></h1>
+      <p id="today" class="text-slate-500 text-sm mt-1"></p>
+    </div>
+    <div class="md:hidden w-10 h-10 rounded-xl bg-brand-500 text-white grid place-items-center"><i class="fa-solid fa-bell"></i></div>
+  </header>
+
+  <!-- Dashboard -->
+  <section id="view-dashboard">
+    <div id="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6"></div>
+
+    <div class="grid lg:grid-cols-5 gap-4">
+      <div class="lg:col-span-2 rounded-2xl bg-brand-500 text-white p-5">
+        <p class="text-brand-100 text-sm font-medium">Tenggat terdekat</p>
+        <div id="nextCard" class="mt-3"></div>
+      </div>
+      <div class="lg:col-span-3 rounded-2xl bg-white border border-slate-200 p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-bold">Minggu ini</h2>
+          <button onclick="showView('tugas')" class="text-sm font-semibold text-brand-600 hover:underline">Lihat semua</button>
+        </div>
+        <ul id="weekList" class="divide-y divide-slate-100"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Daftar tugas -->
+  <section id="view-tugas" class="hidden">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div id="tabs" class="inline-flex bg-white border border-slate-200 rounded-xl p-1 text-sm font-semibold">
+        <button data-f="semua" class="tab px-4 py-1.5 rounded-lg">Semua</button>
+        <button data-f="Tugas" class="tab px-4 py-1.5 rounded-lg">Tugas</button>
+        <button data-f="Ujian" class="tab px-4 py-1.5 rounded-lg">Ujian</button>
+        <button data-f="selesai" class="tab px-4 py-1.5 rounded-lg">Selesai</button>
+      </div>
+      <button onclick="openModal()" class="bg-brand-500 hover:bg-brand-600 text-white rounded-xl px-4 py-2.5 text-sm font-semibold"><i class="fa-solid fa-plus mr-2"></i>Tambah</button>
+    </div>
+    <ul id="taskList" class="space-y-3"></ul>
+  </section>
+</main>
+
+<!-- Navigasi bawah (HP) -->
+<nav class="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 grid grid-cols-3 items-center px-4 py-2" id="bottomNav">
+  <button data-view="dashboard" class="nav-btn flex flex-col items-center text-xs font-semibold py-1"><i class="fa-solid fa-house text-lg mb-0.5"></i>Dashboard</button>
+  <button onclick="openModal()" class="justify-self-center -mt-8 w-14 h-14 rounded-full bg-brand-500 text-white shadow-lg grid place-items-center" aria-label="Tambah tugas"><i class="fa-solid fa-plus text-xl"></i></button>
+  <button data-view="tugas" class="nav-btn flex flex-col items-center text-xs font-semibold py-1"><i class="fa-solid fa-list-check text-lg mb-0.5"></i>Tugas</button>
+</nav>
+
+<!-- Modal form -->
+<div id="modal" class="hidden fixed inset-0 z-40 bg-slate-900/50 grid place-items-end sm:place-items-center p-0 sm:p-4" onclick="if(event.target===this)closeModal()">
+  <div class="modal-enter bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 max-h-[92vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="flex items-center justify-between mb-4">
+      <h2 id="modalTitle" class="text-lg font-bold">Tambah tugas atau ujian</h2>
+      <button onclick="closeModal()" class="w-8 h-8 rounded-lg hover:bg-slate-100" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label for="fTitle" class="block text-sm font-semibold mb-1">Judul</label>
+        <input id="fTitle" type="text" placeholder="Contoh: Laporan Praktikum Jaringan" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="fType" class="block text-sm font-semibold mb-1">Jenis</label>
+          <select id="fType" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 bg-white"><option>Tugas</option><option>Ujian</option></select>
+        </div>
+        <div>
+          <label for="fDate" class="block text-sm font-semibold mb-1">Tenggat</label>
+          <input id="fDate" type="date" class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+        </div>
+      </div>
+      <div>
+        <label for="fCourse" class="block text-sm font-semibold mb-1">Mata kuliah</label>
+        <input id="fCourse" type="text" placeholder="Contoh: Jaringan Komputer" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none">
+      </div>
+      <div>
+        <span class="block text-sm font-semibold mb-1">Lampiran (opsional)</span>
+        <label for="fFile" class="flex flex-col items-center gap-1 border-2 border-dashed border-slate-300 hover:border-brand-500 hover:bg-brand-50 rounded-xl p-5 text-center cursor-pointer">
+          <i class="fa-solid fa-cloud-arrow-up text-2xl text-brand-500"></i>
+          <span id="fileName" class="text-sm text-slate-500">Pilih file soal atau catatan</span>
+        </label>
+        <input id="fFile" type="file" class="hidden">
+      </div>
+      <button onclick="saveTask()" class="w-full bg-brand-500 hover:bg-brand-600 text-white rounded-xl py-3 font-semibold">Simpan tugas</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notifikasi -->
+<div id="toast" class="hidden fixed z-50 top-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm font-semibold rounded-xl px-4 py-3 shadow-lg"></div>
+
+<script>
+/* ---------- Data ---------- */
+const dayMs = 86400000;
+const iso = (offset) => { const d = new Date(Date.now() + offset * dayMs); return d.toISOString().slice(0, 10); };
+const KEY = 'pairup-tasks-v1';
+const seed = () => [
+  { id: 1, title: 'Laporan Praktikum Basis Data', type: 'Tugas', course: 'Basis Data',        date: iso(1),  done: false, file: 'modul-praktikum.pdf' },
+  { id: 2, title: 'UTS Struktur Data',            type: 'Ujian', course: 'Struktur Data',     date: iso(3),  done: false, file: '' },
+  { id: 3, title: 'Makalah Etika Profesi',        type: 'Tugas', course: 'Etika Profesi',     date: iso(5),  done: false, file: '' },
+  { id: 4, title: 'Quiz Kalkulus 2',              type: 'Ujian', course: 'Kalkulus',          date: iso(8),  done: false, file: '' },
+  { id: 5, title: 'Proyek Akhir Pemrograman Web', type: 'Tugas', course: 'Pemrograman Web',   date: iso(12), done: false, file: 'brief-proyek.docx' },
+  { id: 6, title: 'Resume Jurnal Jaringan',       type: 'Tugas', course: 'Jaringan Komputer', date: iso(-1), done: true,  file: '' }
+];
+let tasks;
+try { tasks = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch (e) { tasks = seed(); }
+let filter = 'semua', view = 'dashboard';
+const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(tasks)); } catch (e) {} };
+
+/* ---------- Helper ---------- */
+const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const daysLeft = (d) => Math.round((new Date(d + 'T00:00:00') - new Date(new Date().toDateString())) / dayMs);
+const fmtDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+const label = (n) => n < 0 ? Math.abs(n) + ' hari terlewat' : n === 0 ? 'Hari ini' : n === 1 ? 'Besok' : n + ' hari lagi';
+const tone = (n, done) => done ? 'bg-emerald-50 text-emerald-700' : n <= 1 ? 'bg-rose-50 text-rose-700' : n <= 3 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600';
+const active = () => tasks.filter(t => !t.done).sort((a, b) => a.date.localeCompare(b.date));
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.innerHTML = '<i class="fa-solid fa-circle-check mr-2 text-emerald-400"></i>' + esc(msg);
+  el.classList.remove('hidden');
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => el.classList.add('hidden'), 2200);
+}
+
+/* ---------- Render ---------- */
+function renderDashboard() {
+  const a = active(), now = a.filter(t => daysLeft(t.date) >= 0);
+  const soon = now.filter(t => daysLeft(t.date) <= 3).length;
+  const exams = now.filter(t => t.type === 'Ujian').length;
+  const done = tasks.filter(t => t.done).length;
+  const cards = [
+    ['Tugas aktif', a.length, 'fa-clipboard-list', 'text-brand-600 bg-brand-50'],
+    ['Mepet 3 hari', soon, 'fa-fire', 'text-rose-600 bg-rose-50'],
+    ['Ujian mendatang', exams, 'fa-file-pen', 'text-amber-600 bg-amber-50'],
+    ['Selesai', done, 'fa-circle-check', 'text-emerald-600 bg-emerald-50']
+  ];
+  document.getElementById('stats').innerHTML = cards.map(c => `
+    <div class="rounded-2xl bg-white border border-slate-200 p-4">
+      <div class="w-9 h-9 rounded-lg grid place-items-center ${c[3]}"><i class="fa-solid ${c[2]}"></i></div>
+      <p class="text-2xl font-extrabold mt-3">${c[1]}</p>
+      <p class="text-sm text-slate-500">${c[0]}</p>
+    </div>`).join('');
+
+  const n = now[0];
+  document.getElementById('nextCard').innerHTML = n ? `
+    <h3 class="text-xl font-bold leading-snug">${esc(n.title)}</h3>
+    <p class="text-brand-100 text-sm mt-1">${esc(n.course)} · ${fmtDate(n.date)}</p>
+    <p class="text-4xl font-extrabold mt-4">${label(daysLeft(n.date))}</p>
+    <button onclick="toggle(${n.id})" class="mt-5 bg-white text-brand-700 rounded-xl px-4 py-2 text-sm font-semibold hover:bg-brand-50">Tandai selesai</button>`
+    : '<p class="text-lg font-bold">Semua beres. Tidak ada tenggat aktif.</p>';
+
+  const week = now.filter(t => daysLeft(t.date) <= 7);
+  document.getElementById('weekList').innerHTML = week.length ? week.map(rowMini).join('')
+    : '<li class="py-6 text-center text-slate-500 text-sm">Tidak ada tenggat dalam 7 hari ke depan.</li>';
+}
+
+const rowMini = (t) => {
+  const n = daysLeft(t.date);
+  return `<li class="flex items-center gap-3 py-3">
+    <div class="w-9 h-9 rounded-lg grid place-items-center ${t.type === 'Ujian' ? 'bg-amber-50 text-amber-600' : 'bg-brand-50 text-brand-600'}"><i class="fa-solid ${t.type === 'Ujian' ? 'fa-file-pen' : 'fa-book'}"></i></div>
+    <div class="flex-1 min-w-0"><p class="font-semibold truncate">${esc(t.title)}</p><p class="text-xs text-slate-500">${esc(t.course)}</p></div>
+    <span class="text-xs font-bold px-2.5 py-1 rounded-full ${tone(n, false)}">${label(n)}</span></li>`;
+};
+
+function renderTasks() {
+  let list = [...tasks].sort((a, b) => a.date.localeCompare(b.date));
+  if (filter === 'selesai') list = list.filter(t => t.done);
+  else { list = list.filter(t => !t.done); if (filter !== 'semua') list = list.filter(t => t.type === filter); }
+  document.getElementById('taskList').innerHTML = list.length ? list.map(t => {
+    const n = daysLeft(t.date);
+    return `<li class="bg-white border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
+      <button onclick="toggle(${t.id})" class="mt-0.5 w-6 h-6 rounded-full border-2 grid place-items-center shrink-0 ${t.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 hover:border-brand-500'}" aria-label="Tandai selesai">${t.done ? '<i class="fa-solid fa-check text-xs"></i>' : ''}</button>
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold ${t.done ? 'line-through text-slate-400' : ''}">${esc(t.title)}</p>
+        <p class="text-sm text-slate-500 mt-0.5">${esc(t.course)} · ${t.type} · ${fmtDate(t.date)}</p>
+        ${t.file ? `<span class="inline-flex items-center gap-1.5 mt-2 text-xs bg-slate-100 rounded-lg px-2 py-1"><i class="fa-solid fa-paperclip"></i>${esc(t.file)}</span>` : ''}
+      </div>
+      <div class="flex flex-col items-end gap-2">
+        <span class="text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${tone(n, t.done)}">${t.done ? 'Selesai' : label(n)}</span>
+        <button onclick="removeTask(${t.id})" class="text-slate-400 hover:text-rose-600 text-sm" aria-label="Hapus"><i class="fa-regular fa-trash-can"></i></button>
+      </div></li>`;
+  }).join('') : '<li class="bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center text-slate-500">Belum ada data di sini. Tekan Tambah untuk membuat tugas pertamamu.</li>';
+
+  document.querySelectorAll('.tab').forEach(b => {
+    const on = b.dataset.f === filter;
+    b.className = 'tab px-4 py-1.5 rounded-lg ' + (on ? 'bg-brand-500 text-white' : 'text-slate-600 hover:bg-slate-100');
+  });
+}
+
+function render() { renderDashboard(); renderTasks(); }
+
+/* ---------- Navigasi ---------- */
+function showView(v) {
+  view = v;
+  ['dashboard', 'tugas'].forEach(x => document.getElementById('view-' + x).classList.toggle('hidden', x !== v));
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    const on = b.dataset.view === v;
+    b.classList.toggle('bg-brand-50', on && b.closest('aside'));
+    b.classList.toggle('text-brand-600', on);
+    b.classList.toggle('text-slate-500', !on);
+  });
+  window.scrollTo({ top: 0 });
+}
+document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { filter = b.dataset.f; renderTasks(); }));
+
+/* ---------- Aksi ---------- */
+function toggle(id) {
+  const t = tasks.find(x => x.id === id);
+  t.done = !t.done; persist(); render();
+  toast(t.done ? 'Ditandai selesai' : 'Dikembalikan ke daftar aktif');
+}
+function removeTask(id) {
+  tasks = tasks.filter(x => x.id !== id); persist(); render(); toast('Tugas dihapus');
+}
+function openModal() {
+  document.getElementById('fDate').value = iso(3);
+  document.getElementById('modal').classList.remove('hidden');
+  document.getElementById('fTitle').focus();
+}
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+  ['fTitle', 'fCourse', 'fFile'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('fileName').textContent = 'Pilih file soal atau catatan';
+}
+document.getElementById('fFile').addEventListener('change', (e) => {
+  document.getElementById('fileName').textContent = e.target.files[0] ? e.target.files[0].name : 'Pilih file soal atau catatan';
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+function saveTask() {
+  const title = document.getElementById('fTitle').value.trim();
+  const date = document.getElementById('fDate').value;
+  if (!title || !date) { toast('Isi judul dan tenggat dulu'); return; }
+  const f = document.getElementById('fFile').files[0];
+  tasks.push({
+    id: Date.now(), title, date,
+    type: document.getElementById('fType').value,
+    course: document.getElementById('fCourse').value.trim() || 'Umum',
+    done: false, file: f ? f.name : ''
+  });
+  persist(); closeModal(); render(); showView('tugas'); toast('Tugas tersimpan');
+}
+
+/* ---------- Mulai ---------- */
+const h = new Date().getHours();
+document.getElementById('greeting').textContent = (h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 18 ? 'Selamat sore' : 'Selamat malam') + ', mahasiswa!';
+document.getElementById('today').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+render(); showView('dashboard');
+</script>
+</body>
+</html>
